@@ -1,0 +1,58 @@
+[package]
+name = "wasm-bundler"
+version = "0.1.0"
+authors = ["William Tetlow <william@getshogun.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+wasm-bindgen = "0.2.78"
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
+# compared to the default allocator's ~10K. It is slower than the default
+# allocator, however.
+#
+# Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
+wee_alloc = { version = "0.4.5", optional = true }
+
+swc_bundler = "0.101.0"
+
+swc_common = "0.17.0"
+
+swc_ecma_ast = "0.65.1"
+
+swc_ecma_loader = "0.27.0"
+
+swc_ecma_parser = "0.87.0"
+
+swc_ecma_codegen = "0.89.0"
+
+swc_atoms = "0.2.9"
+
+anyhow = "1.0.52"
+
+web-sys = { version = "0.3.55", features = [ "console" ] }
+
+# There is an issue with latest version of parking_lot_core requiring implementation
+# for Instant::now
+# https://github.com/rustwasm/wasm-pack/issues/743#issuecomment-798881356
+# https://github.com/Amanieu/parking_lot/issues/269
+parking_lot_core = "=0.8.0"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"

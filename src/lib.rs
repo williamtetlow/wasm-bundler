@@ -1,8 +1,9 @@
 mod utils;
 use anyhow::{bail, Error};
 use std::collections::HashMap;
-use std::io;
+use std::hash::Hash;
 use std::path::{Path, PathBuf};
+use std::{io, rc};
 use swc_atoms::js_word;
 use swc_bundler::{Bundler, Hook, Load, ModuleData, ModuleRecord, Resolve};
 use swc_common::{sync::Lrc, FileLoader, FileName, FilePathMapping, Globals, SourceMap, Span};
@@ -29,6 +30,78 @@ extern crate web_sys;
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+#[wasm_bindgen]
+pub struct WasmBundler {
+    files: HashMap<String, String>,
+    entrypoint: String,
+}
+
+#[wasm_bindgen]
+impl WasmBundler {
+    pub fn new(entrypoint: String) -> Self {
+        WasmBundler {
+            files: HashMap::new(),
+            entrypoint,
+        }
+    }
+
+    pub fn add_file(&mut self, filename: String, content: String) {
+        self.files.insert(filename, content);
+    }
+
+    pub fn update_file(&mut self, filename: String, content: String) {
+        self.files.remove(&filename);
+        self.files.insert(filename, content);
+    }
+
+    pub fn bundle(&self) -> String {
+        let globals = Box::leak(Box::new(Globals::default()));
+
+        let source_map = SourceMap::with_file_loader(
+            Box::new(InMemFileLoader::from(self.files.clone())),
+            FilePathMapping::empty(),
+        );
+
+        let cm = Lrc::new(source_map);
+
+        let mut bundler = Bundler::new(
+            globals,
+            cm.clone(),
+            Loader { cm: cm.clone() },
+            PathResolver,
+            swc_bundler::Config {
+                require: true,
+                external_modules: vec![],
+                ..Default::default()
+            },
+            Box::new(Noop),
+        );
+
+        let mut entries = HashMap::default();
+
+        entries.insert("main".to_string(), FileName::Real("main.js".into()));
+
+        let mut bundles = bundler.bundle(entries).expect("failed to bundle");
+
+        let bundle = bundles.pop().unwrap();
+
+        let mut buf = vec![];
+
+        let mut emitter = Emitter {
+            cfg: swc_ecma_codegen::Config {
+                ..Default::default()
+            },
+            cm: cm.clone(),
+            comments: None,
+            wr: JsWriter::new(cm.clone(), "\n", &mut buf, None),
+        };
+
+        emitter.emit_module(&bundle.module).unwrap();
+
+        String::from_utf8_lossy(&buf).to_string()
     }
 }
 
@@ -62,6 +135,10 @@ impl InMemFileLoader {
                 ),
             ]),
         }
+    }
+
+    pub fn from(files: HashMap<String, String>) -> InMemFileLoader {
+        InMemFileLoader { files }
     }
 }
 

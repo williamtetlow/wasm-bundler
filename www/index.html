@@ -5,6 +5,19 @@
     <title>Hello wasm-pack!</title>
   </head>
   <body>
+    <div style="display: flex; flex-direction: row; width: 100%">
+      <div style="width: 50%; margin-right: 5em">
+        <input name="filename1" type="text" readonly />
+        <textarea name="content1" style="width: 100%; height: 500px"></textarea>
+      </div>
+      <div style="width: 50%">
+        <input name="filename2" type="text" readonly />
+        <textarea name="content2" style="width: 100%; height: 500px"></textarea>
+      </div>
+    </div>
+    <button id="bundle">Bundle</button>
+    <hr />
+    <h1>Output</h1>
     <pre id="result"></pre>
     <noscript
       >This page contains webassembly and javascript content, please enable

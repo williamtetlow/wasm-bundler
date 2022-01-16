@@ -82,7 +82,10 @@ impl WasmBundler {
 
         let mut entries = HashMap::default();
 
-        entries.insert("main".to_string(), FileName::Real("main.js".into()));
+        entries.insert(
+            "main".to_string(),
+            FileName::Real(self.entrypoint.clone().into()),
+        );
 
         let mut bundles = bundler.bundle(entries).expect("failed to bundle");
 

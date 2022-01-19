@@ -1,4 +1,4 @@
-import * as wasm from "wasm-bundler";
+import { WasmBundler } from "wasm-bundler";
 
 const entryPoint = "main.js";
 
@@ -29,13 +29,13 @@ document.getElementsByName("content2")[0].value = initialFiles["./a.js"];
 document.getElementsByName("content1")[0].addEventListener("input", (e) => {
   const newContents = e.currentTarget.value;
 
-  bundler.update_file("main.js", newContents);
+  bundler.saveFile("main.js", newContents);
 });
 
 document.getElementsByName("content2")[0].addEventListener("input", (e) => {
   const newContents = e.currentTarget.value;
 
-  bundler.update_file("./a.js", newContents);
+  bundler.saveFile("./a.js", newContents);
 });
 
 document.getElementById("bundle").addEventListener("click", () => {
@@ -44,10 +44,12 @@ document.getElementById("bundle").addEventListener("click", () => {
   document.getElementById("result").textContent = result;
 });
 
-const bundler = wasm.WasmBundler.new(entryPoint);
+const bundler = new WasmBundler();
+
+bundler.addEntry("main", entryPoint);
 
 for (const [filename, content] of Object.entries(initialFiles)) {
-  bundler.add_file(filename, content);
+  bundler.saveFile(filename, content);
 }
 
 const result = bundler.bundle();
